@@ -6,3 +6,6 @@ scikit_learn==1.2.0
 seaborn==0.11.2
 streamlit==1.16.0
 xgboost==1.6.1
+sklearn.metrics.pairwise
+pickle
+
