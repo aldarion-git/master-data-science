@@ -16,6 +16,16 @@ backgroundColor = st.get_option("theme.backgroundColor")
 secondaryBackgroundColor = st.get_option("theme.secondaryBackgroundColor")
 textColor = st.get_option("theme.textColor")
 
+style = f"""
+<style>
+div.stButton > button:first-child {{ background-color: {primaryColor}; color: #FFF; border: 1px solid {textColor}; }}
+div.stButton > button:first-child:hover {{ background-color: #FFF; color: {primaryColor}; border: 1px solid {textColor}; }}
+div.stButton > button:first-child:focus {{ background-color: #FFF; color: {primaryColor}; border: 1px solid {textColor}; }}
+
+div.stAlert {{background-color: #F0FBFF; color: {textColor}; border: 1px solid {textColor};}}
+<style>
+"""
+
 #-----------------------------------------------------
 
 # IMPORTACIÓN DE DATAFRAME Y MODELO
