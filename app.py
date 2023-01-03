@@ -11,6 +11,10 @@ import seaborn as sns
 # THEME
 CURRENT_THEME = "custom"
 
+primaryColor = st.get_option("theme.primaryColor")
+backgroundColor = st.get_option("theme.backgroundColor")
+secondaryBackgroundColor = st.get_option("theme.secondaryBackgroundColor")
+textColor = st.get_option("theme.textColor")
 
 #-----------------------------------------------------
 
