@@ -26,6 +26,7 @@ div.stAlert {{background-color: #F0FBFF; color: {textColor}; border: 1px solid {
 <style>
 """
 
+st.markdown(style, unsafe_allow_html=True)
 #-----------------------------------------------------
 
 # IMPORTACIÓN DE DATAFRAME Y MODELO
