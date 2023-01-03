@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # THEME
+CURRENT_THEME = "custom"
+
 
 #-----------------------------------------------------
 
