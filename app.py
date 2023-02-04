@@ -47,7 +47,7 @@ model.load_model(f'{CURR_DIR}/data/CatBoost.bin')
 df = pickle_load('df_clean')
 df_model = pickle_load('df_model')
 oneHotEncoder = pickle_load('oneHotEncoder')
-cluster = pickle_load('KMeans')
+cluster = pickle_load('kmeans')
 gdf_madrid = pickle_load('gdf_madrid')
 #-----------------------------------------------------
 
