@@ -1,1 +1,1 @@
-web: sh setup.sh && streamlit run --server.port $PORT app.py
+web: sh setup.sh && streamlit run --server.port $PORT 1_Prediction_Mode.py
