@@ -17,16 +17,16 @@ import json
 import re
 
 
-
+# Definición de página
 st.set_page_config(
     page_title="Check Mode",
     page_icon="👋",
 )
 
+# Directorio actual
 CURR_DIR = os.getcwd()
-#print(CURR_DIR)
 
-# THEME
+# Definición de estilos
 primaryColor = st.get_option("theme.primaryColor")
 backgroundColor = st.get_option("theme.backgroundColor")
 secondaryBackgroundColor = st.get_option("theme.secondaryBackgroundColor")
@@ -64,7 +64,7 @@ gdf_madrid = pickle_load('gdf_madrid')
 #-----------------------------------------------------
 
 def main():
-
+# Función que comprueba que la url introducida es válida.
   def is_covered(link):
     
     covered = False
@@ -74,7 +74,7 @@ def main():
         covered = True
 
     return covered
-
+# Función de transformación de la data extraída en el scrapping.
   def check_features(data):
       '''
       Función de comprobación y transformación de las features extraídas de cada
@@ -89,8 +89,6 @@ def main():
     
       # Diccionario de features
       realestate = {
-          #'origin': 'fotocasa',
-          #'page': page,
           'title': '',
           'link': '',
           'image_url': '',
@@ -289,7 +287,7 @@ def main():
       return realestate
 
 
-
+# Función que comprueba la url, hace una llamada y scrapea los datos de la misma para convertirlos, por medio de las transformaciones necesarias, en el registro a predecir.
   def user_input_parameters():    
     txt = st.sidebar.text_area('URL')
     st_features = pd.DataFrame()
@@ -313,8 +311,6 @@ def main():
         prop_data = json.loads(prop_features_clean)
         realestate = check_features(prop_data)
 
-        #st.write(realestate)
-
         # CONVERSIONES
         realestate['hasSwimmingPool'] = 0
         realestate['hasGarden'] = 0
@@ -322,10 +318,6 @@ def main():
         realestate['hasAirco'] = 0
         realestate['hasParking'] = 0
         realestate['hasLift'] = 0
-        realestate['hasHeatingInfo'] = 0
-        realestate['isGoodCondition'] = 1
-        realestate['isNeedsRenovating'] = 0
-        realestate['propertyCondition'] = 0
         realestate['isNewDevelopment'] = int(realestate['isNewConstruction'])
         realestate['title'] = realestate['title'].split()[0].lower()
 
@@ -372,29 +364,12 @@ def main():
         except:
           pass
 
-        try:
-          if bool(re.search('.*',realestate['energyCertificate'])) == True:
-            realestate['hasHeatingInfo'] = 1
-        except:
-          pass 
-
         if realestate['propertyType'] == 'flat':
           realestate['propertyType'] = 'piso'
 
-        if bool(re.search('A reformar',realestate['conservationState'])) == True:
-          realestate['isGoodCondition'] = 0
-          realestate['isNeedsRenovating'] = 1
-
-        realestate['propertyCondition'] = realestate['isGoodCondition']+realestate['isNewDevelopment']*2
-        if realestate['propertyCondition'] > 1:
-          realestate['propertyCondition'] = 2
-
-        if realestate['heating'] == "":
-          realestate['heating'] = 'no info/no calefacción'
-
+        # Creación del registro final
         st_data = {'district': realestate['district'],
                 'propertyType': realestate['propertyType'].lower(),
-                'floor': str(realestate['floor']),
                 'size': realestate['surface'] + realestate['surfaceLand'],
                 'hasParking': int(realestate['hasParking']),
                 'roomNumber': realestate['rooms'],
@@ -404,29 +379,20 @@ def main():
                 'hasGarden':int(realestate['hasGarden']),
                 'hasLift':int(realestate['hasLift']),
                 'hasAirco':int(realestate['hasAirco']),
-                'heatingType':realestate['heating'].lower(),
-                'energyCertification':realestate['energyCertificate'],
-                'propertyCondition': int(realestate['propertyCondition']),
-                'isGoodCondition': int(realestate['isGoodCondition']),
-                'isNeedsRenovating': int(realestate['isNeedsRenovating']),
                 'isNewDevelopment': int(realestate['isNewDevelopment']),
-                'hasHeatingInfo': int(realestate['hasHeatingInfo']),
-                'room_bath_rate': realestate['rooms'] / realestate['bathrooms'],
-                'mean_price': df[df['district'] == realestate['district']]['mean_price'].unique()[0],
-                'size_time_baths': (realestate['surface'] + realestate['surfaceLand']) / realestate['bathrooms'],
+                'price_m2_ft': int(df[df['district'] == realestate['district']]['price_m2_ft'].unique()[0]),
                 'price': realestate['price']
                 }
-        #st.write(st_data)
 
-        st_features = pd.DataFrame(st_data, index=[0]).reset_index(drop=True)
-        #st.write(st_features)
+        st_features = pd.DataFrame(st_data, index=[0]).reset_index(drop=True) # dataframe a predecir
+        
     else:
       st.sidebar.write('The prediction only covers urls with fotocasa.es and /madrid-capital/. Ex.: https://www.fotocasa.es/es/comprar/vivienda/madrid-capital/jardin-ascensor/176196114/d?from=list')
     return st_features
     
     
 #-----------------------------------------------------
-
+# Función de encoding con One Hot Encoding
   def st_one_hot_encoding(st_df):
     st_df = st_df.reindex(columns=df.columns)
 
@@ -445,7 +411,7 @@ def main():
 
 
 #-----------------------------------------------------
-
+# Función que muestra los gráficos de cada barrio. Puede mostrar datos generales o datos con la predicción realizada.
   def about_district(df,user_df,all=True,yhat=0):
     user_propertyType = user_df['propertyType'][0]
     user_district = user_df['district'][0]
@@ -538,6 +504,7 @@ def main():
     return None
 
 #-----------------------------------------------------	
+# Función que extrae la similitud del coseno entre los registros del DataFrame general y el introducir por el usuario.
   def similarity(df_model, st_df, df, comparation):
     similarities = {}
     #st.write(st_df['propertyType'].values[0])
@@ -549,7 +516,9 @@ def main():
     similarities = df_model[(df_model.index.isin(similarities['index'])) & (~df_model.index.isin(comparation.index))]
 
     return similarities
+
 #-----------------------------------------------------
+# Función que muestra el mapa coroplético con las ubicaciones de las recomendaciones.
   def show_map(recommender):
     gdf_count_recommendations = pd.merge(recommender.groupby(by='district')['price'].count(),gdf_madrid,how='right',left_on='district',right_on='NOMBRE')
     gdf_count_recommendations = gpd.GeoDataFrame(gdf_count_recommendations, crs="EPSG:4326", geometry='geometry').fillna(0)
@@ -591,13 +560,13 @@ def main():
   st.title('What will be the price of your ideal home?')
   st.write('The prediction is based on data extracted from the real estate portals Idealista and Fotocasa, so the price we show you is based entirely on the state of the market.')
   st.write('Please enter an url in the sidebar.')
-  if st_df.empty == False:
+  if st_df.empty == False: # Si el dataframe no está vacío, es decir, se ha pulsado en el botón Check url
     st.write('The following parameters have been selected:')
-    st.write(st_df[['district','propertyType','size','floor','roomNumber','bathNumber']])
-    st_df_encoded = st_one_hot_encoding(st_df) 
-    st_df_encoded = st_df_encoded.drop('price',axis=1)
-    st_df_encoded['cluster'] = cluster.predict(st_df_encoded)
-    yhat = model.predict(st_df_encoded)[0].round(0)
+    st.write(st_df[['price','district','propertyType','size','roomNumber','bathNumber']])
+    st_df_encoded = st_one_hot_encoding(st_df) # codifico el df
+    st_df_encoded = st_df_encoded.drop('price',axis=1) # borro la columna precio, que no hace falta
+    st_df_encoded['cluster'] = cluster.predict(st_df_encoded) # le añado la feature de cluster
+    yhat = model.predict(st_df_encoded)[0].round(0) # hago la predicción
     st.success(f'The price of the property will be: {yhat} €. The real price is {st_df["price"].values[0]} €.')
     diff = st_df["price"].values[0]-yhat
 
@@ -612,9 +581,9 @@ def main():
     about_district(df,st_df, all=False,yhat=yhat)
     st.subheader('Similar Real Estates')
     recommender = similarity(df_model, st_df, df, st_df_encoded[st_df.index==0])
-    recommender = df[df.index.isin(recommender.index)]
-    st.write(recommender[['price','district','propertyType','size','floor','roomNumber','bathNumber']])
-    show_map(recommender)
+    recommender = df[df.index.isin(recommender.index)] # extraigo los registros más parecidos
+    st.write(recommender[['price','district','propertyType','size','roomNumber','bathNumber']])
+    show_map(recommender) # muestro el mapa con las ubicaciones de las recomendaciones
 	
     
     
