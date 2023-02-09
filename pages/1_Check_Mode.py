@@ -568,9 +568,9 @@ def main():
     diff = st_df["price"].values[0]-yhat
 
     if diff >= 0:
-       st.warning(f'The difference is {diff} €. The price is higher than in the sector.')
+       st.warning(f'The difference is {diff} €. The price is higher than in the real estate market.')
     else:
-       st.warning(f'The difference is {diff} €. The price is lower than in the sector.')
+       st.warning(f'The difference is {diff} €. The price is lower than in the real estate market.')
 
     st_df_encoded['price'] = yhat
 
