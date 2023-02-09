@@ -12,15 +12,16 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 
+# Definición de página de inicio
 st.set_page_config(
-    page_title="Hello",
+    page_title="Prediction Mode",
     page_icon="👋",
 )
 
+# Directorio actual
 CURR_DIR = os.getcwd()
-print(CURR_DIR)
 
-# THEME
+# Definición de estilos
 primaryColor = st.get_option("theme.primaryColor")
 backgroundColor = st.get_option("theme.backgroundColor")
 secondaryBackgroundColor = st.get_option("theme.secondaryBackgroundColor")
@@ -55,17 +56,17 @@ df_model = pickle_load('df_model')
 oneHotEncoder = pickle_load('oneHotEncoder')
 cluster = pickle_load('kmeans')
 gdf_madrid = pickle_load('gdf_madrid')
+
 #-----------------------------------------------------
 
 def main():
+# Función de tratamiento de datos introducidos por el usuario. Solo se muestra los datos existentes para la dupla Distrito-Tipo de propiedad.
   def user_input_parameters():    
 
     st_district = st.sidebar.selectbox('District',
                                         df['district'].unique())
     st_type = st.sidebar.selectbox('Type',
                                     df[df['district'] == st_district]['propertyType'].unique())
-    st_floor = st.sidebar.selectbox('Floor',
-                                    df[(df['district'] == st_district) & (df['propertyType'] == st_type)]['floor'].unique())
     st_size = st.sidebar.slider('Size (m2)',
                                 int(df[(df['district'] == st_district) & (df['propertyType'] == st_type)]['size'].min()),
                                 int(df[(df['district'] == st_district) & (df['propertyType'] == st_type)]['size'].max()),
@@ -84,50 +85,11 @@ def main():
     st_hasgarden = st.sidebar.selectbox('Garden',df[(df['district'] == st_district) & (df['propertyType'] == st_type)]['hasGarden'].unique())
     st_haslift = st.sidebar.selectbox('Lift',df[(df['district'] == st_district) & (df['propertyType'] == st_type)]['hasLift'].unique())
     st_hasairco = st.sidebar.selectbox('Air conditioning',df[(df['district'] == st_district) & (df['propertyType'] == st_type)]['hasAirco'].unique())
-
-    ls_heating = list(df[(df['district'] == st_district) & (df['propertyType'] == st_type)]['heatingType'].unique())
-    try:
-      ls_heating.remove('no info/no calefacción')
-    except:
-      pass
-
-    st_heating = st.sidebar.selectbox('Heating',
-                                      ls_heating)
-
-    ls_certification = list(df[(df['district'] == st_district) & (df['propertyType'] == st_type)]['energyCertification'].unique())
-    try:
-      ls_certification.remove('NO INFO')
-    except:
-      pass
-
-    st_energyCertificate = st.sidebar.selectbox('Energy Certificate',
-                                      ls_certification)
-    st_propertycondition = st.sidebar.selectbox('Property condition',
-                                      df[(df['district'] == st_district) & (df['propertyType'] == st_type)]['propertyCondition'].unique())
-
-    # Tratamiento de estados de propiedad
-    if st_propertycondition == 2:
-      st_isGoodCondition = 0
-      st_isNewDevelopment = 1
-      st_isNeedsRenovating = 0
-    elif st_propertycondition == 1:
-      st_isGoodCondition = 1
-      st_isNewDevelopment = 0
-      st_isNeedsRenovating = 0
-    else:
-      st_isGoodCondition = 0
-      st_isNewDevelopment = 0
-      st_isNeedsRenovating = 1
-
-    #Tratamiento de hasHeatingInfo
-    if st_heating != 'no info/no calefaccion':
-      st_hasHeatingInfo = 1
-    else:
-      st_hasHeatingInfo = 0
+    st_isNewDevelopment = st.sidebar.selectbox('Is new development?',
+                                      df[(df['district'] == st_district) & (df['propertyType'] == st_type)]['isNewDevelopment'].unique())
 
     st_data = {'district': st_district,
                'propertyType':st_type,
-               'floor':st_floor,
                'size':st_size,
                'hasParking':int(st_hasparking),
                'roomNumber':st_rooms,
@@ -137,23 +99,16 @@ def main():
                'hasGarden':int(st_hasgarden),
                'hasLift':int(st_haslift),
                'hasAirco':int(st_hasairco),
-               'heatingType':st_heating,
-               'energyCertification':st_energyCertificate,
-               'propertyCondition':int(st_propertycondition),
-               'isGoodCondition': st_isGoodCondition,
-               'isNeedsRenovating': st_isNeedsRenovating,
-               'isNewDevelopment': st_isNewDevelopment,
-               'hasHeatingInfo': st_hasHeatingInfo,
-               'room_bath_rate': st_rooms / st_bathrooms,
-               'mean_price': df[df['district'] == st_district]['mean_price'].unique()[0],
-               'size_time_baths': st_size / st_bathrooms,
+               'isNewDevelopment': int(st_isNewDevelopment),
+               'price_m2_ft': int(df[df['district'] == st_district]['price_m2_ft'].unique()[0]),
                'price': 0
                }
     #st.write(st_data)
     st_features = pd.DataFrame(st_data, index=[0]).reset_index(drop=True)
+
     return st_features
 #-----------------------------------------------------
-
+# Función de encoding con One Hot Encoding
   def st_one_hot_encoding(st_df):
     st_df = st_df.reindex(columns=df.columns)
 
@@ -167,12 +122,11 @@ def main():
     df_ohe = pd.DataFrame(feature_array, columns = feature_labels)
     df_onehot_encoding = pd.concat([st_df,df_ohe],axis=1).drop(categorical_columns, axis=1)
 
-    #st.write(df_onehot_encoding)
     return df_onehot_encoding
 
 
 #-----------------------------------------------------
-
+# Función que muestra los gráficos de cada barrio. Puede mostrar datos generales o datos con la predicción realizada.
   def about_district(df,user_df,all=True,yhat=0):
     user_propertyType = user_df['propertyType'][0]
     user_district = user_df['district'][0]
@@ -264,9 +218,9 @@ def main():
     return None
 
 #-----------------------------------------------------	
+# Función que extrae la similitud del coseno entre los registros del DataFrame general y el introducir por el usuario.
   def similarity(df_model, st_df, df, comparation):
     similarities = {}
-    #st.write(st_df['propertyType'].values[0])
     property = st_df['propertyType'].values[0]
     similarities = {i : float(cosine_similarity(comparation,df_model[df_model.index == i])[0]) for i,v in df[df['propertyType'] == property].iterrows()}
     #similarities = {i : float(cosine_similarity(comparation,df[df.index == i])[0]) for i,v in df.iterrows()}
@@ -275,7 +229,9 @@ def main():
     similarities = df_model[(df_model.index.isin(similarities['index'])) & (~df_model.index.isin(comparation.index))]
 
     return similarities
+
 #-----------------------------------------------------
+# Función que muestra el mapa coroplético con las ubicaciones de las recomendaciones.
   def show_map(recommender):
     gdf_count_recommendations = pd.merge(recommender.groupby(by='district')['price'].count(),gdf_madrid,how='right',left_on='district',right_on='NOMBRE')
     gdf_count_recommendations = gpd.GeoDataFrame(gdf_count_recommendations, crs="EPSG:4326", geometry='geometry').fillna(0)
@@ -317,25 +273,25 @@ def main():
   st.title('What will be the price of your ideal home?')
   st.write('The prediction is based on data extracted from the real estate portals Idealista and Fotocasa, so the price we show you is based entirely on the state of the market.')
   st.write('The following parameters have been selected:')
-  st.write(st_df[['district','propertyType','size','floor','roomNumber','bathNumber']])
+  st.write(st_df[['district','propertyType','size','roomNumber','bathNumber']])
 
   
   #PREDICT PRICE BUTTON
   if st.button('PREDICT THE PRICE!'):
-    st_df_encoded = st_one_hot_encoding(st_df) 
-    st_df_encoded = st_df_encoded.drop('price',axis=1)
-    st_df_encoded['cluster'] = cluster.predict(st_df_encoded)
-    yhat = model.predict(st_df_encoded)[0].round(0)
+    st_df_encoded = st_one_hot_encoding(st_df) # codifico el df
+    st_df_encoded = st_df_encoded.drop('price',axis=1) # borro la columna precio, que no hace falta
+    st_df_encoded['cluster'] = cluster.predict(st_df_encoded) # le añado la feature de cluster
+    yhat = model.predict(st_df_encoded)[0].round(0) # hago la predicción
     st.success(f'The price of the property will be: {yhat} €')
     st_df_encoded['price'] = yhat
 
     st.subheader(f"About {st_df[st_df.index == 0]['district'][0]}")
-    about_district(df,st_df, all=False,yhat=yhat)
+    about_district(df,st_df, all=False,yhat=yhat) # muestro los gráficos
     st.subheader('Similar Real Estates')
     recommender = similarity(df_model, st_df, df, st_df_encoded[st_df.index==0])
-    recommender = df[df.index.isin(recommender.index)]
-    st.write(recommender[['district','propertyType','size','floor','roomNumber','bathNumber']])
-    show_map(recommender)
+    recommender = df[df.index.isin(recommender.index)] # extraigo los registros más parecidos
+    st.write(recommender[['price','district','propertyType','size','roomNumber','bathNumber']])
+    show_map(recommender) # muestro el mapa con las ubicaciones de las recomendaciones
   else:
     #DISTRICT INFO
     st.subheader(f"About {st_df[st_df.index == 0]['district'][0]}")
