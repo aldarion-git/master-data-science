@@ -219,14 +219,12 @@ def main():
 
 #-----------------------------------------------------	
 # Función que extrae la similitud del coseno entre los registros del DataFrame general y el introducir por el usuario.
-  def similarity(df_model, st_df, df, comparation):
+  def similarity(df, comparation):
     similarities = {}
-    property = st_df['propertyType'].values[0]
-    similarities = {i : float(cosine_similarity(comparation,df_model[df_model.index == i])[0]) for i,v in df[df['propertyType'] == property].iterrows()}
-    #similarities = {i : float(cosine_similarity(comparation,df[df.index == i])[0]) for i,v in df.iterrows()}
+    similarities = {i : float(cosine_similarity(comparation,df[df.index == i])[0]) for i,v in df.iterrows()}
     similarities = pd.DataFrame([similarities]).T.rename(columns={0: "cosine_similarity"})
     similarities = similarities.reset_index().sort_values(by='cosine_similarity', ascending=False).reset_index(drop=True)[:5]
-    similarities = df_model[(df_model.index.isin(similarities['index'])) & (~df_model.index.isin(comparation.index))]
+    similarities = df[(df.index.isin(similarities['index'])) & (~df.index.isin(comparation.index))]
 
     return similarities
 
@@ -288,7 +286,9 @@ def main():
     st.subheader(f"About {st_df[st_df.index == 0]['district'][0]}")
     about_district(df,st_df, all=False,yhat=yhat) # muestro los gráficos
     st.subheader('Similar Real Estates')
-    recommender = similarity(df_model, st_df, df, st_df_encoded[st_df.index==0])
+    
+    st_df_encoded = st_df_encoded.reindex(columns=df_model.columns)
+    recommender = similarity(df_model, st_df_encoded[st_df.index==0])
     recommender = df[df.index.isin(recommender.index)] # extraigo los registros más parecidos
     st.write(recommender[['price','district','propertyType','size','roomNumber','bathNumber']])
     show_map(recommender) # muestro el mapa con las ubicaciones de las recomendaciones
